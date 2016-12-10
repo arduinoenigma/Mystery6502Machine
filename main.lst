@@ -1,11 +1,20 @@
 pass 2
 
+0000 TODO:  
+
+
+0000 REM_MO 
+
+0000 REM_AD 
+
 
 0000 REM_TO 
 
 0000 REM_IS 
 
 * = $0500
+0500 ENIGV1 = 004F
+0500 ONE_LE 
 0500 ENIGVA = 0050
 0500 RINGST = 0053
 0500 REM_RO 
@@ -361,11 +370,88 @@ pass 2
 
 0652 REM_SU 
 0652 ENIGMA 
-0652        LDA *$5A        A5 5A
-0654        TAX             AA
-0655        LDA REFLEC,X    BD 2C 05
-0658        STA *KEYOUT     85 5C
 
-065A        RTS             60
+0652        JMP ENIGM1      4C 6B 06
+
+
+0655 ONCE_F 
+
+0655 CALL_W 
+
+0655 CALL_W 
+
+0655 REM_SU 
+0655 ENRING 
+
+0655        SEC             38
+0656        ADC *ROTORS,X   75 57
+0658 REM_PL 
+0658        CMP #$0A        C9 0A
+065A        BCC ENRIK1      90 02
+065C REM_AB 
+065C        SBC #$0A        E9 0A
+065E REM_CA 
+
+065E ENRIK1 
+065E        SEC             38
+065F        SBC *RINGST,X   F5 53
+0661        BCS ENRIK2      B0 02
+0663        ADC #$0A        69 0A
+
+0665 ENRIK2 
+0665        CLC             18
+0666        RTS             60
+
+0667 ROTIDX 
+0667 .BYTE $00              00
+0668 .BYTE $00              00
+0669 .BYTE $0A              0A
+066A .BYTE $14              14
+
+
+066B REM_EN 
+066B ENIGM1 
+
+066B        LDY #$03        A0 03
+066D        LDX #$03        A2 03
+066F        LDA *KEYIN      A5 5B
+
+0671 ENIGM2 
+0671        JSR ENRING      20 55 06
+
+0674        STX *TMP01      86 5E
+
+0676        PHA             48
+0677        LDA *ENIGV1,X   B5 4F
+0679        TAX             AA
+067A        PLA             68
+
+067B        ADC ROTIDX,X    7D 67 06
+067E        TAX             AA
+067F        LDA FWRTR1,X    BD 0E 05
+0682        PHA             48
+
+0683        LDA #$00        A9 00
+0685        LDX *TMP01      A6 5E
+0687        JSR ENRING      20 55 06
+068A        STA *TMP02      85 5F
+068C        PLA             68
+
+068D        SEC             38
+068E        SBC *TMP02      E5 5F
+0690        BCS ENIGM3      B0 02
+0692        ADC #$0A        69 0A
+
+0694 ENIGM3 
+0694        CLC             18
+
+0695        STA *KEYOUT     85 5C
+
+0697        DEX             CA
+0698        DEY             88
+0699        BNE ENIGM2      D0 D6
+
+069B        RTS             60
+
 
 done.
