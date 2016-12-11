@@ -460,39 +460,32 @@ pass 2
 
 06B2        STA *KEYOUT     85 5C
 
-06B4        TXA             8A
-06B5        CLC             18
-06B6        ADC *TMP03      65 60
-06B8        TAX             AA
+06B4        TYA             98
 
-06B9        TYA             98
-06BA        CMP #$05        C9 05
-06BC        BNE ENIGNR      D0 00
+06B5        CMP #$04        C9 04
+06B7        BNE ENIGNB      D0 08
 
 
-06BE REM_SE 
+06B9 REM_SE 
 
-06BE ENIGNR 
+06B9        LDA #$01        A9 01
+06BB        STA *TMP03      85 60
 
-06BE        CMP #$04        C9 04
-06C0        BNE ENIGNB      D0 08
+06BD        LDA #$28        A9 28
+06BF        STA *TMP04      85 61
 
+06C1 ENIGNB 
 
-06C2 REM_SE 
+06C1        TXA             8A
+06C2        CLC             18
+06C3        ADC *TMP03      65 60
+06C5        TAX             AA
 
-06C2        LDA #$01        A9 01
-06C4        STA *TMP03      85 60
+06C6        LDA *KEYOUT     A5 5C
 
-06C6        LDA #$28        A9 28
-06C8        STA *TMP04      85 61
+06C8        DEY             88
+06C9        BNE ENIGM2      D0 BC
 
-06CA ENIGNB 
-
-06CA        LDA *KEYOUT     A5 5C
-
-06CC        DEY             88
-06CD        BNE ENIGM2      D0 B8
-
-06CF        RTS             60
+06CB        RTS             60
 
 done.
