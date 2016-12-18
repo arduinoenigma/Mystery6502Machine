@@ -13,7 +13,6 @@ pass 2
 0500 ENIGVA = 0050
 0500 RINGST = 0053
 0500 REM_RO 
-0500 LRRING = 0054
 0500 ROTORS = 0057
 0500 REM_RE 
 0500 LROTOR = 0058
@@ -158,16 +157,17 @@ pass 2
 0563        CMP *ENIGVA     C5 50
 0565        BNE INITOK      D0 10
 
+0567 ZEROIZ 
 0567        LDA #$0B        A9 0B
 0569 REM_11 
-0569        STA *TIMEO1     85 5D
+0569        STA *TMP01      85 5E
 056B        LDX #$00        A2 00
 
 056D CPYINI 
 056D        LDA DEFVAL,X    BD 03 05
 0570        STA *ENIGVA,X   95 50
 0572        INX             E8
-0573        DEC *TIMEO1     C6 5D
+0573        DEC *TMP01      C6 5E
 0575        BNE CPYINI      D0 F6
 
 0577 INITOK 
@@ -204,7 +204,7 @@ pass 2
 059D SKIPMR 
 059D        STA *KEYIN      85 5B
 059F        JSR STEPRT      20 23 06
-05A2        JSR ENIGMA      20 79 06
+05A2        JSR ENIGMA      20 6E 06
 
 05A5        LDA #$50        A9 50
 05A7        STA *TIMEO1     85 5D
@@ -216,7 +216,7 @@ pass 2
 05AF KPUSHB 
 05AF        JMP START       4C 77 05
 05B2 KPUSHG 
-05B2        JMP START       4C 77 05
+05B2        JMP ZEROIZ      4C 67 05
 
 
 05B5 REM_SU 
@@ -330,162 +330,153 @@ pass 2
 
 0623 REM_SU 
 0623 STEPRT 
-0623        LDX #$00        A2 00
+0623        LDX #$01        A2 01
 0625        LDY #$03        A0 03
 
 0627 STEPSC 
-0627        LDA *LRRING,X   B5 54
-0629        CLC             18
-062A        ADC #$08        69 08
-062C        CMP #$0A        C9 0A
-062E        BCC STEPS1      90 02
-0630        SBC #$0A        E9 0A
-0632 STEPS1 
-0632        CMP *LROTOR,X   D5 58
-0634        BNE STEPS2      D0 05
-0636        LDA #$01        A9 01
-0638        JMP STEPDN      4C 3D 06
-063B STEPS2 
-063B        LDA #$00        A9 00
-063D STEPDN 
-063D        STA *TMP02,X    95 5F
-063F        INX             E8
-0640        DEY             88
-0641        BNE STEPSC      D0 E4
+0627        LDA #$00        A9 00
+0629        JSR ENRING      20 5C 06
+062C        CMP #$09        C9 09
+062E        BEQ STEPDN      F0 02
+0630        LDA #$00        A9 00
+0632 STEPDN 
+0632        STA *TMP01,X    95 5E
+0634        INX             E8
+0635        DEY             88
+0636        BNE STEPSC      D0 EF
 
-0643        STY *TMP01      84 5E
-0645        LDA #$04        A9 04
-0647        STA *TMP05      85 62
-0649 REM_IN 
-0649        STA *TMP06      85 63
-064B        LDX #$00        A2 00
-064D        LDY #$00        A0 00
+0638        STY *TMP01      84 5E
+063A        LDA #$04        A9 04
+063C        STA *TMP05      85 62
+063E REM_IN 
+063E        STA *TMP06      85 63
+0640        LDX #$00        A2 00
+0642        LDY #$00        A0 00
 
-064F STEPIW 
-064F        LDA *TMP01,X    B5 5E
-0651        STY *TMP01,X    94 5E
-0653        INX             E8
-0654        CLC             18
-0655        ADC *TMP01,X    75 5E
-0657        CMP #$00        C9 00
-0659        BEQ STEPS3      F0 07
+0644 STEPIW 
+0644        LDA *TMP01,X    B5 5E
+0646        STY *TMP01,X    94 5E
+0648        INX             E8
+0649        CLC             18
+064A        ADC *TMP01,X    75 5E
+064C        CMP #$00        C9 00
+064E        BEQ STEPS3      F0 07
 
-065B        DEX             CA
-065C        INC *ROTORS,X   F6 57
-065E        JSR ROLLOV      20 0C 06
-0661        INX             E8
+0650        DEX             CA
+0651        INC *ROTORS,X   F6 57
+0653        JSR ROLLOV      20 0C 06
+0656        INX             E8
 
-0662 STEPS3 
-0662        DEC *TMP06      C6 63
-0664        BNE STEPIW      D0 E9
+0657 STEPS3 
+0657        DEC *TMP06      C6 63
+0659        BNE STEPIW      D0 E9
 
-0666        RTS             60
+065B        RTS             60
 
 
-0667 REM_SU 
+065C REM_SU 
 
-0667 CALL_W 
+065C CALL_W 
 
-0667 CALL_W 
-0667 ENRING 
+065C CALL_W 
+065C ENRING 
 
-0667        SEC             38
-0668        ADC *ROTORS,X   75 57
-066A REM_PL 
-066A        CMP #$0A        C9 0A
-066C        BCC ENRIK1      90 02
-066E REM_AB 
-066E        SBC #$0A        E9 0A
-0670 REM_CA 
+065C        SEC             38
+065D        ADC *ROTORS,X   75 57
+065F REM_PL 
+065F        CMP #$0A        C9 0A
+0661        BCC ENRIK1      90 02
+0663 REM_AB 
+0663        SBC #$0A        E9 0A
+0665 REM_CA 
 
-0670 ENRIK1 
-0670        SEC             38
-0671        SBC *RINGST,X   F5 53
-0673        BCS ENRIK2      B0 02
-0675        ADC #$0A        69 0A
+0665 ENRIK1 
+0665        SEC             38
+0666        SBC *RINGST,X   F5 53
+0668        BCS ENRIK2      B0 02
+066A        ADC #$0A        69 0A
 
-0677 ENRIK2 
-0677        CLC             18
-0678        RTS             60
-
-
-0679 REM_SU 
-0679 ENIGMA 
-
-0679        LDA #$FF        A9 FF
-067B        STA *TMP03      85 60
-
-067D        LDA #$00        A9 00
-067F        STA *TMP04      85 61
-
-0681        LDY #$07        A0 07
-0683        LDX #$03        A2 03
-0685        LDA *KEYIN      A5 5B
-
-0687 ENIGM2 
-0687        JSR ENRING      20 67 06
-
-068A        STX *TMP01      86 5E
-
-068C        PHA             48
-068D        TXA             8A
-068E        CMP #$00        C9 00
-0690        BEQ ENIGXO      F0 03
-
-0692        LDA *ENIGV1,X   B5 4F
-0694        TAX             AA
-
-0695 ENIGXO 
-0695        PLA             68
-
-0696        CLC             18
-0697        ADC *TMP04      65 61
-0699        ADC ROTIDX,X    7D 0E 05
-069C        TAX             AA
-069D        LDA FWRTR1,X    BD 12 05
-
-06A0        PHA             48
-06A1        LDA #$00        A9 00
-06A3        LDX *TMP01      A6 5E
-06A5        JSR ENRING      20 67 06
-06A8        STA *TMP02      85 5F
-06AA        PLA             68
-
-06AB        SEC             38
-06AC        SBC *TMP02      E5 5F
-06AE        BCS ENIGM3      B0 02
-06B0        ADC #$0A        69 0A
-
-06B2 ENIGM3 
-
-06B2        STA *KEYOUT     85 5C
-
-06B4        TYA             98
-
-06B5        CMP #$04        C9 04
-06B7        BNE ENIGNB      D0 08
+066C ENRIK2 
+066C        CLC             18
+066D        RTS             60
 
 
-06B9 REM_SE 
+066E REM_SU 
+066E ENIGMA 
 
-06B9        LDA #$01        A9 01
-06BB        STA *TMP03      85 60
+066E        LDA #$FF        A9 FF
+0670        STA *TMP03      85 60
 
-06BD        LDA #$28        A9 28
-06BF        STA *TMP04      85 61
+0672        LDA #$00        A9 00
+0674        STA *TMP04      85 61
 
-06C1 ENIGNB 
+0676        LDY #$07        A0 07
+0678        LDX #$03        A2 03
+067A        LDA *KEYIN      A5 5B
 
-06C1        TXA             8A
-06C2        CLC             18
-06C3        ADC *TMP03      65 60
-06C5        TAX             AA
+067C ENIGM2 
+067C        JSR ENRING      20 5C 06
 
-06C6        LDA *KEYOUT     A5 5C
+067F        STX *TMP01      86 5E
 
-06C8        DEY             88
-06C9        BNE ENIGM2      D0 BC
+0681        PHA             48
+0682        TXA             8A
+0683        CMP #$00        C9 00
+0685        BEQ ENIGXO      F0 03
 
-06CB        RTS             60
+0687        LDA *ENIGV1,X   B5 4F
+0689        TAX             AA
 
+068A ENIGXO 
+068A        PLA             68
+
+068B        CLC             18
+068C        ADC *TMP04      65 61
+068E        ADC ROTIDX,X    7D 0E 05
+0691        TAX             AA
+0692        LDA FWRTR1,X    BD 12 05
+
+0695        PHA             48
+0696        LDA #$00        A9 00
+0698        LDX *TMP01      A6 5E
+069A        JSR ENRING      20 5C 06
+069D        STA *TMP02      85 5F
+069F        PLA             68
+
+06A0        SEC             38
+06A1        SBC *TMP02      E5 5F
+06A3        BCS ENIGM3      B0 02
+06A5        ADC #$0A        69 0A
+
+06A7 ENIGM3 
+
+06A7        STA *KEYOUT     85 5C
+
+06A9        TYA             98
+
+06AA        CMP #$04        C9 04
+06AC        BNE ENIGNB      D0 08
+
+
+06AE REM_SE 
+
+06AE        LDA #$01        A9 01
+06B0        STA *TMP03      85 60
+
+06B2        LDA #$28        A9 28
+06B4        STA *TMP04      85 61
+
+06B6 ENIGNB 
+
+06B6        TXA             8A
+06B7        CLC             18
+06B8        ADC *TMP03      65 60
+06BA        TAX             AA
+
+06BB        LDA *KEYOUT     A5 5C
+
+06BD        DEY             88
+06BE        BNE ENIGM2      D0 BC
+
+06C0        RTS             60
 done.
