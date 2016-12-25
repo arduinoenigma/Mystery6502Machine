@@ -1,5 +1,5 @@
-#define rotorkeyidx 7
 #define ringsettingkeyidx 3
+#define rotorkeyidx 7
 #define keyinoutidx 11
 
 byte enigmakey[] = {
@@ -134,18 +134,88 @@ void printenigma() {
   Serial.println(enigmakey[keyinoutidx + 1]);
 }
 
+void settype(int type) {
+  for (byte i = 0; i < 3; i++) {
+    enigmakey[2 - i] = type % 10;
+    type = type / 10;
+  }
+}
+
+void setrings(int rings) {
+  for (byte i = 0; i < 4; i++) {
+    enigmakey[ringsettingkeyidx + 3 - i] = rings % 10;
+    rings = rings / 10;
+  }
+}
+
+void setwheel(int wheel) {
+  for (byte i = 0; i < 4; i++) {
+    enigmakey[rotorkeyidx + 3 - i] = wheel % 10;
+    wheel = wheel / 10;
+  }
+}
+
+byte groups = 0;
+void print(byte o)
+{
+  Serial.print(o);
+  if (groups++ == 3) {
+    Serial.print(' ');
+    groups = 0;
+  }
+}
+
+int encode(const char str[]) {
+
+  int i = 0;
+  char v;
+  byte o;
+
+  do {
+    v = str[i++];
+
+    if (v == 0) {
+      break;
+    }
+    else {
+      if ((v >= '0') && (v <= '9')) {
+        o = enigma(v - '0');
+        print(o);
+      }
+      if (((v >= 'A') && (v <= 'Z')) || ((v >= 'a') && (v <= 'z'))) {
+        v = ((v | 32) - 32 ) - 'A' + 1;
+
+        o = enigma(v / 10);
+        print(o);
+        o = enigma(v - (v / 10) * 10);
+        print(o);
+      }
+    }
+
+  } while (true);
+
+}
+
 void setup() {
   // put your setup code here, to run once:
 
   Serial.begin(9600);
 
+  settype(312);
+  setrings(4257);
+  setwheel(8672);
+
   printkey();
 
-  for (byte i = 0; i < 30; i++) {
-    enigma(0);
-    printenigma();
-  }
+  char msgkey[] = "0000";
+  encode(msgkey);
 
+  setwheel(3359);
+
+  Serial.println(' ');
+
+  char msg[] = "TEST";
+  encode(msg);
 }
 
 void loop() {
