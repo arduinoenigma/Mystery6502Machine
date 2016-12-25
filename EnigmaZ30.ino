@@ -218,7 +218,80 @@ void setup() {
   encode(msg);
 }
 
+byte KeyPressed = 0;
+byte KeyIn = 0;
+
+byte SetType = 0;
+byte SetRing = 0;
+byte SetWheel = 0;
+
 void loop() {
   // put your main code here, to run repeatedly:
 
+  if (Serial.available())
+  {
+    KeyPressed = Serial.read();
+
+    if (KeyPressed == '!') {
+      SetType = 3;
+
+      SetRing = 0;
+      SetWheel = 0;
+      groups = 0;
+      Serial.println("");
+    }
+
+    if (KeyPressed == '@') {
+      SetRing = 4;
+
+      SetType = 0;
+      SetWheel = 0;
+      groups = 0;
+      Serial.println("");
+    }
+
+    if (KeyPressed == '#') {
+      SetWheel = 4;
+
+      SetType = 0;
+      SetRing = 0;
+      groups = 0;
+      Serial.println("");
+    }
+
+    if ((KeyPressed >= '0') && (KeyPressed <= '9')) {
+      KeyIn = (KeyPressed - '0');
+
+      if (SetType + SetRing + SetWheel == 0) {
+        print(enigma(KeyIn));
+      }
+
+      if (SetType)
+      {
+        enigmakey[3 - SetType] = KeyIn;
+        SetType--;
+        if (SetType == 0) {
+          printkey();
+        }
+      }
+
+      if (SetRing)
+      {
+        enigmakey[ringsettingkeyidx + 4 - SetRing] = KeyIn;
+        SetRing--;
+        if (SetRing == 0) {
+          printkey();
+        }
+      }
+
+      if (SetWheel)
+      {
+        enigmakey[rotorkeyidx + 4 - SetWheel] = KeyIn;
+        SetWheel--;
+        if (SetWheel == 0) {
+          printkey();
+        }
+      }
+    }
+  }
 }
