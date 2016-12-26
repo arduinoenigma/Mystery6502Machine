@@ -110,8 +110,11 @@ byte enigma(byte KeyIn)
 
 void printkey() {
   for (char i = 0; i < 11; i++) {
+    Serial.print('0');
     Serial.print(enigmakey[i]);
-    Serial.print(' ');
+    if (i < 10) {
+      Serial.print('+');
+    }
   }
   Serial.println("");
 }
@@ -257,6 +260,12 @@ void loop() {
       SetRing = 0;
       groups = 0;
       Serial.println("");
+    }
+
+    if (KeyPressed == '$') {
+      groups = 0;
+      Serial.println("");
+      printkey();
     }
 
     if ((KeyPressed >= '0') && (KeyPressed <= '9')) {
