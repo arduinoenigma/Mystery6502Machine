@@ -23,6 +23,19 @@ const byte rotors[] PROGMEM = {
   7, 4, 6, 1, 0, 2, 5, 8, 3, 9,
 };
 
+byte KeyPressed = 0;
+byte KeyIn = 0;
+
+byte SetType = 0;
+byte SetRing = 0;
+byte SetWheel = 0;
+byte SetStep = 0;
+
+byte printmode = 0;
+
+byte stepmode = 2;
+
+
 byte calculateRing(byte KeyIn,  byte RotorIdx)
 {
   char t = 0;  // signed type
@@ -38,13 +51,16 @@ byte calculateRing(byte KeyIn,  byte RotorIdx)
   return t;
 }
 
+
 void steprotor() {
   byte step[5];
 
   step[0] = 0;
   for (char i = 1; i < 4; i++) {
     step[i] = 0;
-    if (calculateRing(0, i) == 9) {
+    // stepmode 1: when ring position 9 is at current wheel position, step
+    // stepmode 2: when wheel shows 9 step
+    if (((calculateRing(0, i) == 9) && (stepmode == 1)) || ((enigmakey[rotorkeyidx + i] == 9) && (stepmode == 2))) {
       step[i] = 1;
     }
   }
@@ -60,6 +76,7 @@ void steprotor() {
   }
 
 }
+
 
 byte enigma(byte KeyIn)
 {
@@ -108,6 +125,7 @@ byte enigma(byte KeyIn)
   return t;
 }
 
+
 void printkey() {
   for (char i = 0; i < 11; i++) {
     Serial.print('0');
@@ -119,12 +137,14 @@ void printkey() {
   Serial.println("");
 }
 
+
 void printrotor() {
   for (char i = 0; i < 4; i++) {
     Serial.print(enigmakey[rotorkeyidx + i]);
   }
   Serial.println("");
 }
+
 
 void printenigma() {
   for (char i = 0; i < 4; i++) {
@@ -137,12 +157,14 @@ void printenigma() {
   Serial.println(enigmakey[keyinoutidx + 1]);
 }
 
+
 void settype(int type) {
   for (byte i = 0; i < 3; i++) {
     enigmakey[2 - i] = type % 10;
     type = type / 10;
   }
 }
+
 
 void setrings(int rings) {
   for (byte i = 0; i < 4; i++) {
@@ -151,12 +173,14 @@ void setrings(int rings) {
   }
 }
 
+
 void setwheel(int wheel) {
   for (byte i = 0; i < 4; i++) {
     enigmakey[rotorkeyidx + 3 - i] = wheel % 10;
     wheel = wheel / 10;
   }
 }
+
 
 byte groups = 0;
 void print(byte o)
@@ -167,6 +191,7 @@ void print(byte o)
     groups = 0;
   }
 }
+
 
 int encode(const char str[]) {
 
@@ -199,6 +224,7 @@ int encode(const char str[]) {
 
 }
 
+
 void setup() {
   // put your setup code here, to run once:
 
@@ -219,14 +245,10 @@ void setup() {
 
   char msg[] = "TEST";
   encode(msg);
+
+  Serial.println("");
 }
 
-byte KeyPressed = 0;
-byte KeyIn = 0;
-
-byte SetType = 0;
-byte SetRing = 0;
-byte SetWheel = 0;
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -237,28 +259,31 @@ void loop() {
 
     if (KeyPressed == '!') {
       SetType = 3;
-
       SetRing = 0;
       SetWheel = 0;
+      SetStep = 0;
       groups = 0;
+
       Serial.println("");
     }
 
     if (KeyPressed == '@') {
-      SetRing = 4;
-
       SetType = 0;
+      SetRing = 4;
       SetWheel = 0;
+      SetStep = 0;
       groups = 0;
+
       Serial.println("");
     }
 
     if (KeyPressed == '#') {
-      SetWheel = 4;
-
       SetType = 0;
       SetRing = 0;
+      SetWheel = 4;
+      SetStep = 0;
       groups = 0;
+
       Serial.println("");
     }
 
@@ -268,11 +293,42 @@ void loop() {
       printkey();
     }
 
+    if (KeyPressed == '%') {
+      groups = 0;
+      Serial.println("");
+
+      if (printmode) {
+        Serial.println("printing rotors and key in/out");
+        printmode = 0;
+      }
+      else {
+        Serial.println("printing key out only");
+        printmode = 1;
+      }
+    }
+
+    if (KeyPressed == '^') {
+      SetType = 0;
+      SetRing = 0;
+      SetWheel = 0;
+      SetStep = 1;
+      groups = 0;
+
+      Serial.println("");
+    }
+
     if ((KeyPressed >= '0') && (KeyPressed <= '9')) {
       KeyIn = (KeyPressed - '0');
 
-      if (SetType + SetRing + SetWheel == 0) {
-        print(enigma(KeyIn));
+      if (SetType + SetRing + SetWheel + SetStep == 0) {
+        byte o = enigma(KeyIn);
+
+        if (printmode) {
+          print(o);
+        }
+        else {
+          printenigma();
+        }
       }
 
       if (SetType)
@@ -299,6 +355,22 @@ void loop() {
         SetWheel--;
         if (SetWheel == 0) {
           printkey();
+        }
+      }
+
+      if (SetStep)
+      {
+        SetStep--;
+        if ((KeyIn == 1) || (KeyIn == 2)) {
+          stepmode = KeyIn;
+        }
+
+        if (stepmode == 1) {
+          Serial.println("1: stepping on ring position 9");
+        }
+
+        if (stepmode == 2) {
+          Serial.println("2: stepping on wheel position 9");
         }
       }
     }
