@@ -10,10 +10,17 @@
 // setwheel(1234);
 //
 
-#define messagelenght 10
+//bug: match message shows end rotor position, not start
+
+#define messagematch 6
+
+#define messagelength 10
+char out[messagelength + 1];
 char msg[] = "2518391467";   // input string
-//char enc[] = "3876015924";   // real string
-char enc[] = "3802267051";   // test string 01+02+03+00+00+01+05+01+02+03+08
+char enc[] = "3876015924";   // real string
+
+//char enc[] = "3703712386";   // test string 01+02+03+00+00+00+01+01+02+03+08
+//char enc[] = "3802267051";   // test string 01+02+03+00+00+01+05+01+02+03+08
 //char enc[] = "1801906819";   // test string 01+02+03+01+01+01+01+01+02+03+04 // found at 1234 and 6734
 //char enc[] = "1801906818";   // bad test string
 
@@ -223,6 +230,123 @@ int encode(const char str[]) {
 
 }
 
+void findkeypercentage() {
+
+  int keystried = 0;
+
+  byte ndx = 0;
+  byte match = 0;
+  bool savedstart = false;
+  byte startrotor[] = {0, 0, 0, 0};
+  byte nextrotor[] = {0, 0, 0, 0};
+  byte o;
+
+
+  // start position
+  byte rotorcombondx = 0;
+  int ringtype = 0;
+  int wheel = 0;
+
+  // start position
+  //byte rotorcombondx = 4;
+  //int ringtype = 860;
+  //int wheel = 0000;
+
+  settype(pgm_read_word_near(rotorcombo + rotorcombondx));
+  setrings(ringtype);
+  setwheel(wheel);
+
+  printkey();
+
+  do {
+
+    ndx = 0;
+    match = 0;
+    keystried++;
+
+    do {
+
+      // save rotor starting position before enigma engine moves them
+      for (byte i = 0; i < 4; i++) {
+        startrotor[i] = enigmakey[rotorkeyidx + i];
+      }
+
+      o = (enigma(msg[ndx] - '0')) + '0';
+      out[ndx] = o;
+
+      if (enc[ndx] == out[ndx]) {
+        match++;
+      }
+
+      //printenigma();
+
+      if (!savedstart) {
+        savedstart = true;
+        for (byte i = 0; i < 4; i++) {
+          nextrotor[i] = enigmakey[rotorkeyidx + i];
+        }
+      }
+
+      ndx++;
+
+    } while (ndx < messagelength);
+
+    out[ndx] = 0;
+
+    if (match > messagematch) {
+      for (byte i = 0; i < 4; i++) {
+        enigmakey[rotorkeyidx + i] = startrotor[i];
+      }
+      Serial.print("match,");
+      Serial.print(match);
+      Serial.print(",orig,");
+      Serial.print(enc);
+      Serial.print(",found,");
+      Serial.print(out);
+      Serial.print(",at,");
+      printkey();
+    }
+
+    savedstart = false;
+
+    for (byte i = 0; i < 4; i++) {
+      enigmakey[rotorkeyidx + i] = nextrotor[i];
+    }
+
+    if (keystried > keyspace + messagelength + 2)
+    {
+      Serial.print("ROLLOVER: ");
+      //Serial.println(keystried);
+
+      keystried = 0;
+      ndx = 0;
+
+      ringtype++;
+      Serial.print("RINGS ");
+      setrings(ringtype);
+
+      if (ringtype == ringspace)
+      {
+        ringtype = 0000;
+
+        rotorcombondx++;
+        if (rotorcombondx == 6)
+        {
+          Serial.println("ALL SETTINGS TRIED, STOPPING");
+          return;
+        }
+        Serial.print("ROTORS");
+        settype(pgm_read_word_near(rotorcombo + rotorcombondx));
+        setrings(ringtype);
+      }
+
+      Serial.println(" ");
+      printkey();
+    }
+
+  } while (true);
+}
+
 
 void findkey() {
 
@@ -268,7 +392,7 @@ void findkey() {
     // need to do machine period + key to overlap search
     // in case it occurs in a period boundary
     // try with start position = 1236
-    if (keystried > keyspace + messagelenght + 2)
+    if (keystried > keyspace + messagelength + 2)
     {
       Serial.print("ROLLOVER: ");
       //Serial.println(keystried);
@@ -343,17 +467,29 @@ void findkey() {
 
 }
 
+void encodesamplekey() {
+
+  settype(123);
+  setrings(1);
+  setwheel(1238);
+  printkey();
+  encode(msg);
+
+}
+
 void setup() {
   // put your setup code here, to run once:
 
-  Serial.begin(9600);
-  //Serial.begin(115200);
+  //Serial.begin(9600);
+  Serial.begin(115200);
 
   delay(1000);
 
-  //encode(msg[]);
+  //encodesamplekey();
 
-  findkey();
+  //findkey();
+
+  findkeypercentage();
 }
 
 void loop() {
