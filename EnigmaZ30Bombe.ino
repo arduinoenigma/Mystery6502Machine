@@ -10,11 +10,9 @@
 // setwheel(1234);
 //
 
-//bug: match message shows end rotor position, not start
-
-#define messagematch 6
-
 #define messagelength 10
+#define maxerrors 3
+
 char out[messagelength + 1];
 char msg[] = "2518391467";   // input string
 char enc[] = "3876015924";   // real string
@@ -232,15 +230,16 @@ int encode(const char str[]) {
 
 void findkeypercentage() {
 
-  int keystried = 0;
-
-  byte ndx = 0;
-  byte match = 0;
   bool savedstart = false;
+  bool savednext = false;
+
   byte startrotor[] = {0, 0, 0, 0};
   byte nextrotor[] = {0, 0, 0, 0};
-  byte o;
 
+  int keystried = 0;
+  byte ndx = 0;
+  byte o;
+  byte errors = 0;
 
   // start position
   byte rotorcombondx = 0;
@@ -257,31 +256,41 @@ void findkeypercentage() {
   setwheel(wheel);
 
   printkey();
+  keystried = 0;
 
   do {
 
     ndx = 0;
-    match = 0;
+    errors = 0;
+
+    savedstart = false;
+    savednext = false;
+
     keystried++;
+
+    //Serial.println("new key");
 
     do {
 
       // save rotor starting position before enigma engine moves them
-      for (byte i = 0; i < 4; i++) {
-        startrotor[i] = enigmakey[rotorkeyidx + i];
+      if (!savedstart) {
+        savedstart = true;
+        for (byte i = 0; i < 4; i++) {
+          startrotor[i] = enigmakey[rotorkeyidx + i];
+        }
       }
 
       o = (enigma(msg[ndx] - '0')) + '0';
       out[ndx] = o;
 
-      if (enc[ndx] == out[ndx]) {
-        match++;
+      if (enc[ndx] != out[ndx]) {
+        errors++;
       }
 
       //printenigma();
 
-      if (!savedstart) {
-        savedstart = true;
+      if (!savednext) {
+        savednext = true;
         for (byte i = 0; i < 4; i++) {
           nextrotor[i] = enigmakey[rotorkeyidx + i];
         }
@@ -289,16 +298,20 @@ void findkeypercentage() {
 
       ndx++;
 
-    } while (ndx < messagelength);
+      //Serial.print(ndx);
+      //Serial.print(",");
+      //Serial.println(errors);
+
+    } while ((ndx < messagelength) && (errors <= maxerrors));
 
     out[ndx] = 0;
 
-    if (match > messagematch) {
+    if (errors <= maxerrors) {
       for (byte i = 0; i < 4; i++) {
         enigmakey[rotorkeyidx + i] = startrotor[i];
       }
       Serial.print("match,");
-      Serial.print(match);
+      Serial.print(messagelength - errors);
       Serial.print(",orig,");
       Serial.print(enc);
       Serial.print(",found,");
@@ -307,39 +320,35 @@ void findkeypercentage() {
       printkey();
     }
 
-    savedstart = false;
-
     for (byte i = 0; i < 4; i++) {
       enigmakey[rotorkeyidx + i] = nextrotor[i];
     }
 
-    if (keystried > keyspace + messagelength + 2)
+    if (keystried > keyspace + messagelength + 1)
     {
-      Serial.print("ROLLOVER: ");
+      keystried = 0;
+      Serial.print("ROLLOVER: RINGS");
       //Serial.println(keystried);
 
-      keystried = 0;
-      ndx = 0;
-
       ringtype++;
-      Serial.print("RINGS ");
-      setrings(ringtype);
 
       if (ringtype == ringspace)
       {
+        Serial.print(": ROTORS");
+
         ringtype = 0000;
 
         rotorcombondx++;
         if (rotorcombondx == 6)
         {
-          Serial.println("ALL SETTINGS TRIED, STOPPING");
+          Serial.println(" ALL SETTINGS TRIED, STOPPING");
           return;
         }
-        Serial.print("ROTORS");
+
         settype(pgm_read_word_near(rotorcombo + rotorcombondx));
-        setrings(ringtype);
       }
 
+      setrings(ringtype);
       Serial.println(" ");
       printkey();
     }
@@ -480,8 +489,8 @@ void encodesamplekey() {
 void setup() {
   // put your setup code here, to run once:
 
-  //Serial.begin(9600);
-  Serial.begin(115200);
+  Serial.begin(9600);
+  //Serial.begin(115200);
 
   delay(1000);
 
