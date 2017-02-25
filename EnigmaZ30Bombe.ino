@@ -10,10 +10,22 @@
 // setwheel(1234);
 //
 
-#define messagelength 10
-#define maxerrors 3
 
-char out[messagelength + 1];
+// 8100 is the enigma z keyspace, reduce to test fewer cases and make sure all the logic is working
+#define leverkeyspace 8100
+
+// 10000 (0000..9999) are all the ring settings, reduce to test fewer cases and make sure all the logic is working
+#define ringspace 10000
+
+// for allocating array space
+#define maxmessagelength 10
+
+int keyspace = leverkeyspace;
+
+byte messagelength =  10;
+byte maxerrors = 3;
+
+char out[maxmessagelength + 1];
 char msg[] = "2518391467";   // input string
 char enc[] = "3876015924";   // real string
 
@@ -22,13 +34,7 @@ char enc[] = "3876015924";   // real string
 //char enc[] = "1801906819";   // test string 01+02+03+01+01+01+01+01+02+03+04 // found at 1234 and 6734
 //char enc[] = "1801906818";   // bad test string
 
-// 8100 is the enigma z keyspace, reduce to test fewer cases and make sure all the logic is working
-#define keyspace 8100
-
-// 10000 (0000..9999) are all the ring settings, reduce to test fewer cases and make sure all the logic is working
-#define ringspace 10000
-
-byte stepmode = 2;        // 1: when ring position 9 is at current wheel position, step  //  2: when wheel shows 9 step
+byte stepmode = 1;        // 1: when ring position 9 is at current wheel position, step  //  2: when wheel shows 9 step  // 3: odometer stepping
 byte printalltries = 0;   // 0: only prints rollover message  //  1: prints every combination tried (slows down system)
 
 // leftrotortype,midrotortype,rightrotortype,ringreflector,ringleftrotor,ringmidrotor,ringrightrotor,reflectorposition,leftrotorposition,midrotorposition,rightrotorposition,keyin,keyout
@@ -76,22 +82,42 @@ byte calculateRing(byte KeyIn,  byte RotorIdx)
 void steprotor() {
   byte step[5];
 
-  step[0] = 0;
-  for (char i = 1; i < 4; i++) {
-    step[i] = 0;
-    // stepmode 1: when ring position 9 is at current wheel position, step
-    // stepmode 2: when wheel shows 9 step
-    if (((calculateRing(0, i) == 9) && (stepmode == 1)) || ((enigmakey[rotorkeyidx + i] == 9) && (stepmode == 2))) {
-      step[i] = 1;
+  if (stepmode == 3) {
+
+    int rotorpos = 0;
+
+    rotorpos = enigmakey[rotorkeyidx + 0] * 1000 + enigmakey[rotorkeyidx + 1] * 100 + enigmakey[rotorkeyidx + 2] * 10 + enigmakey[rotorkeyidx + 3];
+
+    rotorpos++;
+
+    if (rotorpos > 9999) {
+      rotorpos = 0;
+    }
+
+    for (char i = 0; i < 4; i++) {
+      enigmakey[rotorkeyidx + (3 - i)] = rotorpos - (rotorpos / 10) * 10;
+      rotorpos = rotorpos / 10;
     }
   }
-  step[4] = 1;
 
-  for (char i = 0; i < 4; i++) {
-    if (step[i] || step[i + 1]) {
-      enigmakey[rotorkeyidx + i]++;
-      if (enigmakey[rotorkeyidx + i] > 9) {
-        enigmakey[rotorkeyidx + i] = 0;
+  if ((stepmode == 1) || (stepmode == 2)) {
+    step[0] = 0;
+    for (char i = 1; i < 4; i++) {
+      step[i] = 0;
+      // stepmode 1: when ring position 9 is at current wheel position, step
+      // stepmode 2: when wheel shows 9 step
+      if (((calculateRing(0, i) == 9) && (stepmode == 1)) || ((enigmakey[rotorkeyidx + i] == 9) && (stepmode == 2))) {
+        step[i] = 1;
+      }
+    }
+    step[4] = 1;
+
+    for (char i = 0; i < 4; i++) {
+      if (step[i] || step[i + 1]) {
+        enigmakey[rotorkeyidx + i]++;
+        if (enigmakey[rotorkeyidx + i] > 9) {
+          enigmakey[rotorkeyidx + i] = 0;
+        }
       }
     }
   }
@@ -174,6 +200,19 @@ void printenigma() {
   Serial.println(enigmakey[keyinoutidx + 1]);
 }
 
+void setstepmode(byte stepmodev) {
+
+  stepmode = stepmodev;
+
+  if ((stepmode == 1) || (stepmode == 2)) {
+    keyspace = leverkeyspace;
+  }
+
+  if (stepmode == 3) {
+    keyspace = 10000;
+  }
+}
+
 void settype(int type) {
   for (byte i = 0; i < 3; i++) {
     enigmakey[2 - i] = type % 10;
@@ -228,6 +267,10 @@ int encode(const char str[]) {
 
 }
 
+// 02+01+03 +00+03+03+03 +00+01+00+06
+
+// 03+02+01+07+05+06+04+01+05+01+02
+
 void findkeypercentage() {
 
   bool savedstart = false;
@@ -247,8 +290,8 @@ void findkeypercentage() {
   int wheel = 0;
 
   // start position
-  //byte rotorcombondx = 4;
-  //int ringtype = 860;
+  //byte rotorcombondx = 5;
+  //int ringtype = 7564;
   //int wheel = 0000;
 
   settype(pgm_read_word_near(rotorcombo + rotorcombondx));
@@ -287,7 +330,10 @@ void findkeypercentage() {
         errors++;
       }
 
-      //printenigma();
+      if (printalltries)
+      {
+        printenigma();
+      }
 
       if (!savednext) {
         savednext = true;
@@ -489,10 +535,12 @@ void encodesamplekey() {
 void setup() {
   // put your setup code here, to run once:
 
-  Serial.begin(9600);
-  //Serial.begin(115200);
+  //Serial.begin(9600);
+  Serial.begin(115200);
 
   delay(1000);
+
+  setstepmode(3);
 
   //encodesamplekey();
 
@@ -503,6 +551,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+
 
 
 }
