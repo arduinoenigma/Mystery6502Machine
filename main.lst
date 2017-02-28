@@ -336,8 +336,9 @@ pass 2
 0629        LDY #$03        A0 03
 
 062B STEPSC 
-062B        LDA #$00        A9 00        ; LISTING STEPS WHEN RING POSITION IS NOW 9
-062D        JSR ENRING      20 60 06     ; B5 57 EA (LDA *ROTORS,X / NOP) for visible 9 stepping
+062B        LDA #$00        A9 00
+062D        LDA *ROTORS,X   B5 57        ; fix to always step on rotor showing 9
+062F        NOP             EA           ; filler NOP / original code was JSR ENRING 20 60 06
 0630        CMP #$09        C9 09
 0632        BEQ STEPDN      F0 02
 0634        LDA #$00        A9 00
