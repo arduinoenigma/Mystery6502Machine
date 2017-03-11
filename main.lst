@@ -166,14 +166,14 @@ pass 2
 056B        BNE INITOK      D0 10
 
 056D ZEROIZ 
-056D        LDA #$0E        A9 0E
+056D        LDA #$11        A9 11
 056F REM_14 
 056F        STA *TMP01      85 5E
 0571        LDX #$00        A2 00
 
 0573 CPYINI 
-0573        LDA DEFVAL,X    BD 06 05
-0576        STA *ENIGV1,X   95 4F
+0573        LDA GEARTX,X    BD 03 05
+0576        STA *$4C,X      95 4C
 0578        INX             E8
 0579        DEC *TMP01      C6 5E
 057B        BNE CPYINI      D0 F6
@@ -717,16 +717,60 @@ pass 2
 07BC        LDY #RINGST     A0 53
 07BE        JSR COPY        20 E7 06
 
-07C1        LDA #$04        A9 04
-07C3        LDX #TMP06      A2 63
+07C1 SETF3  
+
+07C1        LDA #$03        A9 03
+07C3        LDX #$4C        A2 4C
 07C5        LDY #ROTORS     A0 57
 07C7        JSR COPY        20 E7 06
 
-07CA        LDX #$00        A2 00
+07CA        LDX #$0F        A2 0F
 07CC        STX *KEYIN      86 5B
-07CE        STX *KEYOUT     86 5C
+07CE        LDX #$03        A2 03
+07D0        STX *KEYOUT     86 5C
 
-07D0        JSR SHOWEN      20 CA 05
-07D3        JMP START       4C 7D 05
+07D2        LDA *ENIGV1     A5 4F
+07D4        STA *$5A        85 5A
+
+07D6        JSR READKY      20 F5 06
+
+07D9        CMP #$0B        C9 0B
+07DB        BEQ GEACHK      F0 16
+
+07DD        JSR MOVROT      20 E5 05
+
+07E0        LDA *$5A        A5 5A
+07E2        CMP #$09        C9 09
+07E4        BNE F3NOOV      D0 02
+07E6        LDA #$01        A9 01
+07E8 F3NOOV 
+07E8        CMP #$02        C9 02
+07EA        BNE F3NOUF      D0 02
+07EC        LDA #$00        A9 00
+07EE F3NOUF 
+07EE        STA *ENIGV1     85 4F
+
+07F0        JMP SETF3       4C C1 07
+
+07F3 GEACHK 
+
+07F3        LDA #$04        A9 04
+07F5        LDX #TMP06      A2 63
+07F7        LDY #ROTORS     A0 57
+07F9        JSR COPY        20 E7 06
+07FC        JMP CODEOV      4C F0 04
+07FF        NOP             EA
+
+* = $04F0
+
+04F0 CODEOV 
+
+04F0        LDX #$00        A2 00
+04F2        STX *KEYIN      86 5B
+04F4        STX *KEYOUT     86 5C
+
+04F6        JSR SHOWEN      20 CA 05
+04F9        JMP START       4C 7D 05
+04FC        NOP             EA
 
 done.
