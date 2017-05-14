@@ -37,6 +37,8 @@ pass 2
 0500 GETKEY = 1F6A
 0500 SCANS  = 1F1F
 
+
+0500 REM_BV 
 0500        JMP INIT        4C 67 05
 
 0503 GEARTX 
@@ -210,7 +212,10 @@ pass 2
 0594        BEQ KPUSHG      F0 18
 
 0596        JSR MOVROT      20 DF 05
-0599        JMP START       4C 7E 05
+
+0599 REM_Z_ 
+0599        BEQ START       F0 E3
+059B        BRK             00
 
 059C SKIPMR 
 059C        STA *KEYIN      85 5B
@@ -220,7 +225,10 @@ pass 2
 05A1        LDA #$50        A9 50
 05A3        STA *TIMEO1     85 5D
 
-05A5        JMP START       4C 7E 05
+
+05A5 REM_N_ 
+05A5        BPL START       10 D7
+05A7        BRK             00
 
 05A8 KPUSHA 
 05A8        JMP START       4C 7E 05
@@ -274,8 +282,8 @@ pass 2
 05DF REM_SU 
 05DF MOVROT 
 
-05DF        LDX *$00        A6 00
-05E1        LDY *$04        A4 04
+05DF        LDX #$00        A2 00
+05E1        LDY #$04        A0 04
 05E3        STX *TMP01      86 5E
 
 05E5 MOVRSC 
@@ -293,7 +301,10 @@ pass 2
 05F7 MOVRIN 
 05F7        LDX *TMP01      A6 5E
 05F9        INC *ROTORS,X   F6 57
-05FB        JMP MOVRCK      4C 02 06
+
+05FB REM_Z_ 
+05FB        BNE MOVRCK      D0 05
+05FD        BRK             00
 
 05FE MOVRDE 
 05FE        LDX *TMP01      A6 5E
@@ -575,6 +586,8 @@ pass 2
 06EC REM_DI 
 06EC        TXS             9A
 06ED REM_AN 
+
+06ED REM_Z_ 
 06ED        JMP ZEROIZ      4C 6E 05
 06F0 REM_SE 
 06F0 READKG 
@@ -622,102 +635,116 @@ pass 2
 
 071D SETF1E 
 
-071D        JSR READKY      20 DA 06
+071D        NOP             EA
+071E        NOP             EA
 
-0720        CMP #$0B        C9 0B
-0722        BEQ SETCHK      F0 03
+071F        JSR READKY      20 DA 06
 
-0724        JMP SETF1       4C 10 07
+0722        CMP #$0B        C9 0B
+0724        BEQ SETCHK      F0 03
 
-0727 SETCHK 
 
-0727        LDA #$01        A9 01
-0729        LDX *LROTOR     A6 58
-072B        STA *TMP02,X    95 5F
-072D        LDX *MROTOR     A6 59
-072F        STA *TMP02,X    95 5F
-0731        LDX *RROTOR     A6 5A
-0733        STA *TMP02,X    95 5F
-0735        LDA #$00        A9 00
-0737        CLC             18
-0738        ADC *TMP03      65 60
-073A        ADC *TMP04      65 61
-073C        ADC *TMP05      65 62
+0726 REM_Z_ 
+0726        BNE SETF1       D0 E8
+0728        BRK             00
 
-073E        CMP #$03        C9 03
-0740        BEQ SETUOK      F0 08
+0729 SETCHK 
 
-0742        LDA #$0E        A9 0E
-0744        JSR TIMEOC      20 BB 05
-0747        JMP SETF1E      4C 1D 07
+0729        LDA #$01        A9 01
+072B        LDX *LROTOR     A6 58
+072D        STA *TMP02,X    95 5F
+072F        LDX *MROTOR     A6 59
+0731        STA *TMP02,X    95 5F
+0733        LDX *RROTOR     A6 5A
+0735        STA *TMP02,X    95 5F
+0737        LDA #$00        A9 00
+0739        CLC             18
+073A        ADC *TMP03      65 60
+073C        ADC *TMP04      65 61
+073E        ADC *TMP05      65 62
 
-074A SETUOK 
+0740        CMP #$03        C9 03
+0742        BEQ SETUOK      F0 08
 
-074A        LDX #LROTOR     A2 58
-074C        LDY #ENIGVA     A0 50
-074E        JSR COPY        20 CC 06
+0744        LDA #$0E        A9 0E
+0746        JSR TIMEOC      20 BB 05
 
-0751        LDA #$04        A9 04
-0753        LDX #RINGST     A2 53
-0755        LDY #ROTORS     A0 57
-0757        JSR COPY        20 CC 06
+0749 REM_N_ 
+0749        BPL SETF1E      10 D2
+074B        BRK             00
 
-075A        LDA #$00        A9 00
-075C        STA *ROLLTB     85 4B
+074C SETUOK 
 
-075E SETF2  
+074C        LDX #LROTOR     A2 58
+074E        LDY #ENIGVA     A0 50
+0750        JSR COPY        20 CC 06
 
-075E        LDX #$02        A2 02
-0760        STX *KEYOUT     86 5C
+0753        LDA #$04        A9 04
+0755        LDX #RINGST     A2 53
+0757        LDY #ROTORS     A0 57
+0759        JSR COPY        20 CC 06
 
-0762        JSR READKY      20 DA 06
+075C        LDA #$00        A9 00
+075E        STA *ROLLTB     85 4B
 
-0765        CMP #$0B        C9 0B
-0767        BEQ RNGCHK      F0 03
+0760 SETF2  
 
-0769        JMP SETF2       4C 5E 07
+0760        LDX #$02        A2 02
+0762        STX *KEYOUT     86 5C
 
-076C RNGCHK 
+0764        JSR READKY      20 DA 06
 
-076C        LDA #$08        A9 08
-076E        STA *ROLLTB     85 4B
+0767        CMP #$0B        C9 0B
+0769        BEQ RNGCHK      F0 03
 
-0770        LDA #$04        A9 04
-0772        LDX #ROTORS     A2 57
-0774        LDY #RINGST     A0 53
-0776        JSR COPY        20 CC 06
+076B REM_Z_ 
+076B        BNE SETF2       D0 F3
+076D        BRK             00
 
-0779 SETF3  
+076E RNGCHK 
 
-0779        LDA #$04        A9 04
-077B        LDX #GEARAM     A2 4C
-077D        LDY #ROTORS     A0 57
-077F        JSR COPY        20 CC 06
+076E        LDA #$08        A9 08
+0770        STA *ROLLTB     85 4B
 
-0782        LDX #$03        A2 03
-0784        STX *KEYOUT     86 5C
+0772        LDA #$04        A9 04
+0774        LDX #ROTORS     A2 57
+0776        LDY #RINGST     A0 53
+0778        JSR COPY        20 CC 06
 
-0786        JSR READKY      20 DA 06
+077B SETF3  
 
-0789        CMP #$0B        C9 0B
-078B        BEQ GEACHK      F0 07
+077B        LDA #$04        A9 04
+077D        LDX #GEARAM     A2 4C
+077F        LDY #ROTORS     A0 57
+0781        JSR COPY        20 CC 06
 
-078D        LDA *$5A        A5 5A
-078F        STA *ENIGV1     85 4F
+0784        LDX #$03        A2 03
+0786        STX *KEYOUT     86 5C
 
-0791        JMP SETF3       4C 79 07
+0788        JSR READKY      20 DA 06
 
-0794 GEACHK 
+078B        CMP #$0B        C9 0B
+078D        BEQ GEACHK      F0 07
 
-0794        LDA #$04        A9 04
-0796        LDX #TMP06      A2 63
-0798        LDY #ROTORS     A0 57
-079A        JSR COPY        20 CC 06
+078F        LDA *$5A        A5 5A
+0791        STA *ENIGV1     85 4F
 
-079D        LDA #$00        A9 00
-079F        STA *ROLLTB     85 4B
-07A1 REM_SE 
-07A1        JSR TIMEOC      20 BB 05
 
-07A4        JMP MNURET      4C 81 05
+0793 REM_N_ 
+0793        BPL SETF3       10 E6
+0795        BRK             00
+
+0796 GEACHK 
+
+0796        LDA #$04        A9 04
+0798        LDX #TMP06      A2 63
+079A        LDY #ROTORS     A0 57
+079C        JSR COPY        20 CC 06
+
+079F        LDA #$00        A9 00
+07A1        STA *ROLLTB     85 4B
+07A3 REM_SE 
+07A3        JSR TIMEOC      20 BB 05
+
+07A6        JMP MNURET      4C 81 05
 done.
